@@ -1,0 +1,23 @@
+# GRAPE-API
+
+* Ruby version 2.7.1
+
+* Rails 5.2
+
+* Grape
+
+* Dry-rb
+
+* Trailblazer Reform
+
+== Application setup
+
+1. bundle install
+2. rails db:create
+3. rails db:migrate
+4. rails db:seed
+5. Run rails grape:routes to check routes
+
+* Tests
+
+rspec
