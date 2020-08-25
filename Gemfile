@@ -33,6 +33,8 @@ gem 'grape_on_rails_routes', '~> 0.3.2'
 gem 'fast_jsonapi', '~> 1.5'
 gem 'trailblazer', '~> 2.1.0'
 gem 'trailblazer-rails', '~> 2.1'
+gem 'jwt', '~> 2.2.2'
+gem 'faraday', '~> 1.0'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console

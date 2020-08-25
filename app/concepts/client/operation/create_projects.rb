@@ -2,6 +2,9 @@ require "trailblazer"
 
 class Client
   class CreateProjects < Trailblazer::Operation
+    include PermissionHelper
+
+    step :check_permissions
     step :validate_params
     step :save_projects!
 
@@ -14,7 +17,7 @@ class Client
 
       projects = []
       options[:params].each do |params_for_project|
-        result = Project::Create.(params: params_for_project, client: options[:client])
+        result = Project::Create.(params: params_for_project, client: options[:client], token: options[:token])
 
         if result.failure?
           return false

@@ -1,12 +1,12 @@
 module Clients
   class Api < Grape::API
     version 'v1', using: :path
-    format :json
+    format :txt
     prefix :api
 
     helpers do
       def execute_request(client, operation, serializer)
-        result = operation.(params: params[:projects], client: client)
+        result = operation.(params: params[:projects], client: client, token: token)
 
         error!(:bad_request, 400) if result.failure?
 
@@ -14,6 +14,9 @@ module Clients
         serializer.new(projects, { is_collection: true }).serialized_json
       end
 
+      def token
+        request.headers['Authorization'].to_s.split(' ').last
+      end
     end
 
     namespace :clients do
@@ -55,7 +58,7 @@ module Clients
         end
 
         post do
-          result = Client::Create.(params: params[:client])
+          result = Client::Create.(params: params[:client], token: token)
           error!(:bad_request, 400) if result.failure?
           execute_request(result[:model], Client::CreateProjects, ::ProjectSerializer)
         end

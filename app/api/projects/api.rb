@@ -1,10 +1,16 @@
 module Projects
   class Api < Grape::API
     version 'v1', using: :path
-    format :json
+    format :txt
     prefix :api
 
     namespace :projects do
+
+      helpers do
+        def token
+          request.headers['Authorization'].to_s.split(' ').last
+        end
+      end
 
       route_param :id do
         params do
@@ -25,7 +31,7 @@ module Projects
 
             error!(:not_found, 404) unless project
 
-            result = Client::Create.(params: params[:client] )
+            result = Client::Create.(params: params[:client], token: token)
 
             error!(:bad_request, 400) if result.failure?
 
@@ -51,13 +57,13 @@ module Projects
           client = Client.find_by(name: params[:client][:name])
 
           unless client
-            client_result = Client::Create.(params: params[:client] )
+            client_result = Client::Create.(params: params[:client], token: token)
             error!(:bad_request, 400) if client_result.failure?
 
             client = client_result[:model]
           end
 
-          project_result = Project::Create.(params: params[:project], client: client)
+          project_result = Project::Create.(params: params[:project], client: client, token: token)
 
           error!(:bad_request, 400) if project_result.failure?
 

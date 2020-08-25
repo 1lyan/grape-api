@@ -2,6 +2,9 @@ require "trailblazer"
 
 class Client
   class Embed < Trailblazer::Operation
+    include PermissionHelper
+
+    step :check_permissions
     step :validate
     step :embed_client!
 

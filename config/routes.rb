@@ -3,4 +3,5 @@ Rails.application.routes.draw do
 
   mount Projects::Api => '/'
   mount Clients::Api => '/'
+  mount Permissions::Api => '/'
 end

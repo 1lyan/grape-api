@@ -2,6 +2,9 @@ require "trailblazer"
 
 class Project
   class Create < Trailblazer::Operation
+    include PermissionHelper
+
+    step :check_permissions
     step Model( Project, :new )
     step Trailblazer::Operation::Contract::Build( constant: Project::Contract::Create )
     step Trailblazer::Operation::Contract::Validate()
