@@ -14,9 +14,9 @@ describe Clients::Api do
 
   context 'POST /api/v1/clients/:id/projects' do
     it 'finds an existing Client and creates a collection of Projects for that Client' do
-      # expect{
+      expect {
         post "/api/v1/clients/#{client1.id}/projects", params: { projects: project_collection_params }
-      # }.to change(Project, :count).by(2)
+      }.to change(Project, :count).by(2)
       expect(response.status).to eq(201)
     end
   end

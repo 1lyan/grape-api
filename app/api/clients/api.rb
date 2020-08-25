@@ -4,6 +4,18 @@ module Clients
     format :json
     prefix :api
 
+    helpers do
+      def execute_request(client, operation, serializer)
+        result = operation.(params: params[:projects], client: client)
+
+        error!(:bad_request, 400) if result.failure?
+
+        projects = result[:projects]
+        serializer.new(projects, { is_collection: true }).serialized_json
+      end
+
+    end
+
     namespace :clients do
       route_param :id do
         params do
@@ -21,21 +33,9 @@ module Clients
           end
 
           post do
-            Rails.logger.info(params)
-            Rails.logger.info(request)
-            # debugger
             client = Client.find_by(id: params[:id])
-            # debugger
             error!(:not_found, 404) unless client
-
-            service = Client::CreateProjectsForExistingClient.new(Project::CreateProjectForm)
-
-            result = service.call(client, params[:projects])
-
-            error!(:bad_request, 400) if result.failure?
-
-            projects = result.value!
-            ::ProjectSerializer.new(projects, { is_collection: true }).serialized_json
+            execute_request(client, Client::CreateProjects, ::ProjectSerializer)
           end
         end
       end
@@ -55,22 +55,10 @@ module Clients
         end
 
         post do
-          Rails.logger.info(request.headers)
-
-          client_service = Client::CreateClient.new(Client::CreateClientForm)
-          client_result = client_service.call(Client.new, params[:client])
-          error!(:bad_request, 400) if client_result.failure?
-
-          client = client_result.value!
-          project_service = Client::CreateProjectsForExistingClient.new(Project::CreateProjectForm)
-          project_result = project_service.call(client, params[:projects])
-
-          error!(:bad_request, 400) if project_result.failure?
-
-          projects = project_result.value!
-          ::ProjectSerializer.new(projects, { is_collection: true }).serialized_json
+          result = Client::Create.(params: params[:client])
+          error!(:bad_request, 400) if result.failure?
+          execute_request(result[:model], Client::CreateProjects, ::ProjectSerializer)
         end
-
 
       end
     end

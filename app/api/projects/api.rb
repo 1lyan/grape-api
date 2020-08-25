@@ -15,7 +15,9 @@ module Projects
           desc 'Embeds a new Client to an existing Project'
 
           params do
-            requires :name, type: String, desc: 'Client name'
+            group :client, type: Hash do
+              requires :name, type: String, desc: 'Client name'
+            end
           end
 
           post do
@@ -23,13 +25,11 @@ module Projects
 
             error!(:not_found, 404) unless project
 
-            service = Client::EmbedClient.new(Client::EmbedClientForm)
-
-            result = service.call(Client.new, project, { name: params[:name] })
+            result = Client::Create.(params: params[:client] )
 
             error!(:bad_request, 400) if result.failure?
 
-            ::ClientSerializer.new(result.value!).serialized_json
+            ::ClientSerializer.new(result[:model]).serialized_json
           end
         end
       end
@@ -48,18 +48,16 @@ module Projects
         end
 
         post do
-          client_service = Client::CreateClient.new(Client::CreateClientForm)
           client = Client.find_by(name: params[:client][:name])
 
           unless client
-            client_result = client_service.call(Client.new, params[:client])
+            client_result = Client::Create.(params: params[:client] )
             error!(:bad_request, 400) if client_result.failure?
 
-            client = client_result.value!
+            client = client_result[:model]
           end
 
-          project_service = Project::CreateProject.new(Project::CreateProjectForm)
-          project_result = project_service.call(client, Project.new, params[:project])
+          project_result = Project::Create.(params: params[:project], client: client)
 
           error!(:bad_request, 400) if project_result.failure?
 
