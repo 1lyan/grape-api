@@ -5,7 +5,7 @@ module Permissions
     prefix :api
 
     resource :permissions do
-      desc 'Embeds a new Client to an existing Project'
+      desc 'Checks for a permission by a token'
 
       params do
         requires :token, type: String, desc: 'JWT Token'
