@@ -28,13 +28,14 @@ gem 'dry-container', '~> 0.7.2'
 gem 'dry-monads', '~> 1.3.5'
 gem 'dry-types', '~> 1.4'
 gem 'dry-validation', '~> 1.5.4'
-gem 'grape', '~> 1.4'
+gem 'grape', '1.3.3'
 gem 'grape_on_rails_routes', '~> 0.3.2'
 gem 'fast_jsonapi', '~> 1.5'
 gem 'trailblazer', '~> 2.1.0'
 gem 'trailblazer-rails', '~> 2.1'
 gem 'jwt', '~> 2.2.2'
 gem 'faraday', '~> 1.0'
+gem 'grape-kaminari', '~> 0.3.0'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console

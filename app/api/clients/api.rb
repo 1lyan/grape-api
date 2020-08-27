@@ -4,6 +4,8 @@ module Clients
     format :txt
     prefix :api
 
+    include Grape::Kaminari
+
     helpers do
       def execute_request(client, operation, serializer)
         result = operation.(params: params[:projects], client: client, token: token)
@@ -55,9 +57,13 @@ module Clients
               ::ProjectSerializer.new(project).serialized_json
             elsif params[:project_status].present?
               projects = client.projects.where(status: 'started')
+
+              projects = Kaminari.paginate_array(projects.to_a, limit: params[:limit], offset: params[:ofset], total_count: Project.count)
               ::ProjectSerializer.new(projects, { is_collection: true }).serialized_json
             elsif params[:project_created_at].present?
               projects = client.projects.where('created_at > ?', params[:project_created_at].to_i)
+
+              projects = Kaminari.paginate_array(projects.to_a, limit: params[:limit], offset: params[:ofset], total_count: Project.count)
               ::ProjectSerializer.new(projects, { is_collection: true }).serialized_json
             else
               ::ClientSerializer.new(client).serialized_json
