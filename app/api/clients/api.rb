@@ -1,13 +1,78 @@
 module Clients
   class Api < Grape::API
     version 'v1', using: :path
-    format :json
+    format :txt
     prefix :api
+
+    include Grape::Kaminari
+
+    helpers do
+      def execute_request(client, operation, serializer)
+        result = operation.(params: params[:projects], client: client, token: token)
+
+        error!(:bad_request, 400) if result.failure?
+
+        projects = result[:projects]
+        serializer.new(projects, { is_collection: true }).serialized_json
+      end
+
+      def token
+        request.headers['Authorization'].to_s.split(' ').last
+      end
+
+      def token_ok?
+        payload = JwtMock.decode_token(token)
+        info = payload[0]
+
+        return true if info['create']
+
+        false
+      rescue => _
+        false
+      end
+
+      def paginate_projects(projects)
+        Kaminari.paginate_array(projects.to_a, limit: params[:limit], offset: params[:ofset], total_count: Project.count)
+      end
+    end
 
     namespace :clients do
       route_param :id do
         params do
           requires :id, type: Integer, desc: 'Client Id'
+        end
+
+        resource :client do
+          params do
+            optional :project_id, type: Integer, desc: 'Project Id'
+            optional :project_status, type: String, desc: 'Project Status'
+            optional :project_created_at, type: Integer, desc: 'Project creation timestamp'
+          end
+
+          get do
+            return status(403) unless token_ok?
+
+            client = Client.find_by(id: params[:id])
+            error!(:not_found, 404) unless client
+
+            if params[:project_id].present?
+              project = client.projects.find_by(id: params[:project_id])
+              error!(:not_found, 404) unless project
+              ::ProjectSerializer.new(project).serialized_json
+            elsif params[:project_status].present?
+              projects = client.projects.where(status: 'started')
+
+              projects = paginate_projects(projects)
+              ::ProjectSerializer.new(projects, { is_collection: true }).serialized_json
+            elsif params[:project_created_at].present?
+              projects = client.projects.where('created_at > ?', params[:project_created_at].to_i)
+
+              projects = paginate_projects(projects)
+              ::ProjectSerializer.new(projects, { is_collection: true }).serialized_json
+            else
+              ::ClientSerializer.new(client).serialized_json
+            end
+          end
         end
 
         resource :projects do
@@ -21,21 +86,9 @@ module Clients
           end
 
           post do
-            Rails.logger.info(params)
-            Rails.logger.info(request)
-            # debugger
             client = Client.find_by(id: params[:id])
-            # debugger
             error!(:not_found, 404) unless client
-
-            service = Client::CreateProjectsForExistingClient.new(Project::CreateProjectForm)
-
-            result = service.call(client, params[:projects])
-
-            error!(:bad_request, 400) if result.failure?
-
-            projects = result.value!
-            ::ProjectSerializer.new(projects, { is_collection: true }).serialized_json
+            execute_request(client, Client::CreateProjects, ::ProjectSerializer)
           end
         end
       end
@@ -55,22 +108,10 @@ module Clients
         end
 
         post do
-          Rails.logger.info(request.headers)
-
-          client_service = Client::CreateClient.new(Client::CreateClientForm)
-          client_result = client_service.call(Client.new, params[:client])
-          error!(:bad_request, 400) if client_result.failure?
-
-          client = client_result.value!
-          project_service = Client::CreateProjectsForExistingClient.new(Project::CreateProjectForm)
-          project_result = project_service.call(client, params[:projects])
-
-          error!(:bad_request, 400) if project_result.failure?
-
-          projects = project_result.value!
-          ::ProjectSerializer.new(projects, { is_collection: true }).serialized_json
+          result = Client::Create.(params: params[:client], token: token)
+          error!(:bad_request, 400) if result.failure?
+          execute_request(result[:model], Client::CreateProjects, ::ProjectSerializer)
         end
-
 
       end
     end

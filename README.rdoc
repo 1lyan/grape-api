@@ -1,4 +1,4 @@
-# GRAPE-API
+== GRAPE-API
 
 * Ruby version 2.7.1
 
@@ -18,6 +18,6 @@
 4. rails db:seed
 5. Run rails grape:routes to check routes
 
-* Tests
+== Tests
 
 rspec

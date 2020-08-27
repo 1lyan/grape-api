@@ -1,7 +1,7 @@
 require 'reform/form/coercion'
 
-class Project
-  class CreateProjectForm < Reform::Form
+module Project::Contract
+  class Create < Reform::Form
     feature Coercion
 
     property :id, type: Types::Integer

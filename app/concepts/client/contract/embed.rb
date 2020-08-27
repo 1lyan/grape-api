@@ -1,7 +1,7 @@
 require 'reform/form/coercion'
 
-class Client
-  class EmbedClientForm < Reform::Form
+module Client::Contract
+  class Embed < Reform::Form
     feature Coercion
 
     property :id, type: Types::Integer
