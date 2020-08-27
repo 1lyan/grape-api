@@ -17,12 +17,52 @@ module Clients
       def token
         request.headers['Authorization'].to_s.split(' ').last
       end
+
+      def token_ok?
+        payload = JwtMock.decode_token(token)
+        info = payload[0]
+
+        return true if info['create']
+
+        false
+      rescue => _
+        false
+      end
     end
 
     namespace :clients do
       route_param :id do
         params do
           requires :id, type: Integer, desc: 'Client Id'
+        end
+
+        resource :client do
+          params do
+            optional :project_id, type: Integer, desc: 'Project Id'
+            optional :project_status, type: String, desc: 'Project Status'
+            optional :project_created_at, type: Integer, desc: 'Project creation timestamp'
+          end
+
+          get do
+            return status(403) unless token_ok?
+
+            client = Client.find_by(id: params[:id])
+            error!(:not_found, 404) unless client
+
+            if params[:project_id].present?
+              project = client.projects.find_by(id: params[:project_id])
+              error!(:not_found, 404) unless project
+              ::ProjectSerializer.new(project).serialized_json
+            elsif params[:project_status].present?
+              projects = client.projects.where(status: 'started')
+              ::ProjectSerializer.new(projects, { is_collection: true }).serialized_json
+            elsif params[:project_created_at].present?
+              projects = client.projects.where('created_at > ?', params[:project_created_at].to_i)
+              ::ProjectSerializer.new(projects, { is_collection: true }).serialized_json
+            else
+              ::ClientSerializer.new(client).serialized_json
+            end
+          end
         end
 
         resource :projects do
